@@ -3,6 +3,10 @@ import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 
+app = Flask(__name__)
+WSO2_IS = 'https://192.168.1.16:9443'
+
+
 def get_recovery_code(username):
     content_header = {"content-type": "application/json"}
     json_body = '''{
@@ -14,8 +18,8 @@ def get_recovery_code(username):
         ],
         "properties": []
     }'''
-    return requests.post('https://localhost:9443/api/users/v1/recovery/password/init', auth=('admin', 'admin'),
-                             headers=content_header, data=json_body, verify=False)
+    return requests.post('{}/api/users/v1/recovery/password/init'.format(WSO2_IS), auth=('admin', 'admin'),
+                         headers=content_header, data=json_body, verify=False)
 
 
 def request_sms(recovery_code):
@@ -25,8 +29,8 @@ def request_sms(recovery_code):
         "channelId": "2",
         "properties": []
     }'''
-    return requests.post('https://localhost:9443/api/users/v1/recovery/password/recover', auth=('admin', 'admin'),
-                             headers=content_header, data=json_body, verify=False)
+    return requests.post('{}/api/users/v1/recovery/password/recover'.format(WSO2_IS), auth=('admin', 'admin'),
+                         headers=content_header, data=json_body, verify=False)
 
 
 def confirm(reset_code):
@@ -35,8 +39,8 @@ def confirm(reset_code):
         "confirmationCode": "''' + reset_code + '''",
         "properties": []
     }'''
-    return requests.post('https://localhost:9443/api/users/v1/recovery/password/confirm', auth=('admin', 'admin'),
-                             headers=content_header, data=json_body, verify=False)
+    return requests.post('{}/api/users/v1/recovery/password/confirm'.format(WSO2_IS), auth=('admin', 'admin'),
+                         headers=content_header, data=json_body, verify=False)
 
 
 def reset(reset_code, password):
@@ -46,7 +50,7 @@ def reset(reset_code, password):
         "password": "''' + password + '''",
         "properties": []
     }'''
-    response = requests.post('https://localhost:9443/api/users/v1/recovery/password/reset', auth=('admin', 'admin'),
+    response = requests.post('{}/api/users/v1/recovery/password/reset'.format(WSO2_IS), auth=('admin', 'admin'),
                              headers=content_header, data=json_body, verify=False)
     if response.status_code == 200:
         # print(response.json())
@@ -58,9 +62,6 @@ def reset(reset_code, password):
         return response.json()
 
 
-app = Flask(__name__)
-
-
 @app.route('/', methods=['GET', 'POST'])
 def sms_password_reset():
 
@@ -69,11 +70,11 @@ def sms_password_reset():
         one_time_password = request.args.get('otp')
         if username is None or username == '':
             display = '<p>Please enter specify your username.</p><br>' + '''
-                                  <form action="/" method="get">
-                                    <label for="username">username:</label>
-                                    <input type="text" id="username" name="username"><br><br>
-                                    <input type="submit" value="Submit">
-                                  </form>'''
+                          <form action="/" method="get">
+                            <label for="username">username:</label>
+                            <input type="text" id="username" name="username"><br><br>
+                            <input type="submit" value="Submit">
+                          </form>'''
             return display
         elif one_time_password is None or one_time_password == '':
             response = get_recovery_code(username)
@@ -136,4 +137,4 @@ def sms_password_reset():
 
 if __name__ == '__main__':
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    app.run(port=4242)
+    app.run(host='0.0.0.0', port=4242)
